@@ -6,8 +6,8 @@ Folder ini menyediakan REST API untuk aplikasi Android dan website EcoPlant. Pen
 
 1. Pasang PHP 8.1 atau lebih baru (di komputer ini tersedia melalui XAMPP).
 2. Buka PowerShell pada folder `backend php`.
-3. Jalankan: `& 'C:\xampp\php\php.exe' -S 0.0.0.0:8080 -t public public/router.php`.
-4. Cek `http://127.0.0.1:8080/api/health`.
+3. Jalankan: `& 'C:\xampp\php\php.exe' -S 0.0.0.0:3000 -t public public/router.php`.
+4. Cek `http://127.0.0.1:3000/api/health`.
 
 Backend membuat `storage/data.json` otomatis dan mengisinya dengan data tanaman contoh. File tersebut lokal dan tidak ikut Git.
 
@@ -25,7 +25,7 @@ Login admin/petugas pada aplikasi masih memakai konfigurasi lokal karena tabel a
 
 ## Menghubungkan Android
 
-Android Emulator biasanya mengakses komputer melalui `http://10.0.2.2:8080/api`. HP fisik harus memakai alamat IPv4 komputer yang satu jaringan, misalnya `http://192.168.x.x:8080/api`, dan Windows Firewall harus mengizinkan port 8080. Atur `ecoplant.api.baseUrl` (dan opsional `ecoplant.api.token`) pada `local.properties` Android.
+Server API yang dipakai aplikasi: `http://10.210.34.155:3000/api/`. Jalankan PHP di laptop server dengan bind `0.0.0.0:3000`; pastikan HP/laptop klien berada di jaringan yang dapat mencapai laptop tersebut dan firewall mengizinkan port 3000. Atur `ecoplant.api.baseUrl` (dan opsional `ecoplant.api.token`) pada `local.properties` Android.
 
 HTTP tanpa TLS hanya untuk pengembangan jaringan lokal. Untuk hosting publik, aktifkan HTTPS, autentikasi berbasis akun/role, validasi izin admin/petugas, dan database sebelum dipakai sungguhan.
 

@@ -1,25 +1,19 @@
 # EcoPlant Android App + PHP API
 
-EcoPlant mendukung katalog dan informasi wisata tanaman, laporan kondisi tanaman oleh petugas, pengelolaan informasi wisata oleh admin, serta alur pesanan toko.
-
-## Android
-
-1. Buka repo ini di Android Studio dan tunggu Gradle Sync.
-2. Atur nilai lokal pada local.properties memakai contoh di local.properties.example.
-3. Pilih perangkat lalu tekan Run.
+EcoPlant Android and the web frontend should use the same PHP API base URL: http://10.210.34.155:3000/api/. Configure the web app to call the same /api endpoints.
 
 ## Backend PHP
 
-Folder API ada di backend php. Di komputer ini PHP tersedia dari XAMPP. Jalankan dari folder backend:
+Run PHP on the server laptop from the backend php folder:
 
 ```powershell
-& 'C:\xampp\php\php.exe' -S 0.0.0.0:8080 -t public public/router.php
+& 'C:\xampp\php\php.exe' -S 0.0.0.0:3000 -t public public/router.php
 ```
 
-Cek server pada http://127.0.0.1:8080/api/health. Android Emulator menggunakan base URL http://10.0.2.2:8080/api. Untuk HP fisik, gunakan alamat IPv4 komputer dan pastikan keduanya satu jaringan serta port 8080 diizinkan firewall.
+Check http://10.210.34.155:3000/api/health. Keep the server laptop and the Android device/web laptop on a network that can reach each other, and allow port 3000 through the server laptop firewall.
 
-## Penyimpanan dan database
+## Database
 
-Sebelum skema database kelompok diberikan, API memakai penyimpanan JSON sementara di backend php/storage/data.json. File ini dibuat otomatis dan diabaikan Git. Login admin/petugas masih memakai konfigurasi lokal aplikasi; integrasi akun, role, dan database akan disesuaikan setelah ERD/skema database dibagikan.
+Until the group shares the database schema and connection settings, this scaffold stores temporary data in backend php/storage/data.json. The Android app and web app must go through this same API; they should not connect directly to the database. Replace the temporary JSON storage with the shared database after its schema is available.
 
-Jangan commit local.properties, token API, password, file data, cache, atau hasil build.
+Do not commit local.properties, API tokens, passwords, runtime data, Gradle caches, or build outputs.
