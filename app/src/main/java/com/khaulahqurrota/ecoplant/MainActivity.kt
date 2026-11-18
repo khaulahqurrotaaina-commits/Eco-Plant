@@ -281,7 +281,12 @@ private fun PlantStoreApp() {
                     onTipsChange = { tipsEnabled = it },
                     tourismInfo = tourismInfo,
                 )
-                else -> ProfileScreen(onMenuSelect = { profileSection = it }, onLogout = { role = null; profileSection = null })
+                else -> ProfileScreen(
+                    favoriteCount = favoriteIds.size,
+                    orderCount = if (lastOrder == null) 0 else 1,
+                    onMenuSelect = { profileSection = it },
+                    onLogout = { role = null; profileSection = null },
+                )
             }
         }
     }
@@ -991,36 +996,133 @@ private fun OrderConfirmation(onDone: () -> Unit) {
 }
 
 @Composable
-private fun ProfileScreen(onMenuSelect: (ProfileSection) -> Unit, onLogout: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(20.dp)) {
-        Text("Profil", color = StoreText, fontSize = 25.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(20.dp))
-        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Brush.horizontalGradient(listOf(Color(0xFF164B37), Color(0xFF2C704B)))).padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(shape = CircleShape, color = Color.White.copy(alpha = .18f), modifier = Modifier.size(55.dp)) { Box(contentAlignment = Alignment.Center) { Text("🌱", fontSize = 29.sp) } }
-            Column(Modifier.padding(start = 13.dp)) {
-                Text("Pecinta Tanaman", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text("Selamat datang di EcoPlant", color = Color.White.copy(alpha = .75f), fontSize = 11.sp)
+private fun ProfileScreen(
+    favoriteCount: Int,
+    orderCount: Int,
+    onMenuSelect: (ProfileSection) -> Unit,
+    onLogout: () -> Unit,
+) {
+    val page = Color(0xFFF5F7F1)
+    val title = Color(0xFF1D2B22)
+    val muted = Color(0xFF78847A)
+    val accent = Color(0xFF4F781F)
+
+    Column(
+        Modifier.fillMaxSize().background(page).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(15.dp),
+    ) {
+        Text("Profil", color = title, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold)
+
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(25.dp))
+                .background(Brush.horizontalGradient(listOf(Color(0xFFA8C780), Color(0xFFD6E3B5))))
+                .padding(17.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = CircleShape, color = Color.White.copy(alpha = .72f), modifier = Modifier.size(62.dp)) {
+                    Box(contentAlignment = Alignment.Center) { Text("🌿", fontSize = 31.sp) }
+                }
+                Column(Modifier.padding(start = 13.dp)) {
+                    Text("Halo, Sahabat EcoPlant 👋", color = title, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(3.dp))
+                    Text("Selamat datang di Wisata Kebun Bandung", color = title.copy(alpha = .72f), fontSize = 11.sp, lineHeight = 15.sp)
+                }
+            }
+            Spacer(Modifier.height(15.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ProfileStat("▣", orderCount.toString(), "Pesanan", Modifier.weight(1f), title, accent)
+                ProfileStat("♥", favoriteCount.toString(), "Tanaman favorit", Modifier.weight(1f), title, accent)
             }
         }
-        Spacer(Modifier.height(18.dp))
-        listOf(
-            "📦   Pesanan saya" to ProfileSection.Orders,
-            "📍   Alamat pengiriman" to ProfileSection.Address,
-            "♡   Tanaman favorit" to ProfileSection.Favorites,
-            "☘   Tips perawatan" to ProfileSection.Care,
-            "🌱   Informasi wisata" to ProfileSection.TourismInfo,
-            "⚙   Pengaturan" to ProfileSection.Settings,
-        ).forEach { (label, section) ->
-            Row(Modifier.fillMaxWidth().clickable { onMenuSelect(section) }.padding(vertical = 15.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(label, color = StoreText, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                Text("›", color = StoreMuted, fontSize = 22.sp)
+
+        Text("Akses cepat", color = title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            ProfileQuickCard("▣", "Pesanan saya", "Lihat pesananmu", Modifier.weight(1f), title, muted, accent) {
+                onMenuSelect(ProfileSection.Orders)
             }
-            HorizontalDivider(color = Mint)
+            ProfileQuickCard("♥", "Favorit", "Tanaman tersimpan", Modifier.weight(1f), title, muted, accent) {
+                onMenuSelect(ProfileSection.Favorites)
+            }
         }
-        Spacer(Modifier.height(14.dp))
-        TextButton(onClick = onLogout) { Text("Keluar dari akun pembeli", color = Color(0xFF9A554A), fontWeight = FontWeight.SemiBold) }
-        Spacer(Modifier.height(18.dp))
-        Text("EcoPlant · rawat hijau, rawat bumi", color = StoreMuted, fontSize = 11.sp)
+
+        Text("Preferensi", color = title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        ProfileMenuCard {
+            ProfileMenuRow("⌖", "Alamat pengiriman", "Kelola alamat pesanan", title, muted, accent) { onMenuSelect(ProfileSection.Address) }
+            HorizontalDivider(color = Color(0xFFE7EBE2))
+            ProfileMenuRow("♧", "Notifikasi", "Atur pengingat tanaman", title, muted, accent) { onMenuSelect(ProfileSection.Settings) }
+        }
+
+        Text("Info & bantuan", color = title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        ProfileMenuCard {
+            ProfileMenuRow("?", "Tips perawatan", "Panduan merawat tanaman", title, muted, accent) { onMenuSelect(ProfileSection.Care) }
+            HorizontalDivider(color = Color(0xFFE7EBE2))
+            ProfileMenuRow("i", "Tentang wisata kebun", "Lokasi dan informasi EcoPlant", title, muted, accent) { onMenuSelect(ProfileSection.TourismInfo) }
+        }
+
+        Surface(
+            modifier = Modifier.fillMaxWidth().clickable { onLogout() },
+            shape = RoundedCornerShape(18.dp),
+            color = Color.White,
+            shadowElevation = 2.dp,
+        ) {
+            Row(Modifier.padding(vertical = 16.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Text("↪", color = accent, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("  Keluar dari akun", color = title, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+        Text("EcoPlant · rawat hijau, rawat bumi", color = muted, fontSize = 11.sp, modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 4.dp))
+    }
+}
+
+@Composable
+private fun ProfileStat(icon: String, value: String, label: String, modifier: Modifier, title: Color, accent: Color) {
+    Surface(modifier, shape = RoundedCornerShape(16.dp), color = Color.White.copy(alpha = .94f)) {
+        Row(Modifier.padding(horizontal = 11.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Surface(shape = CircleShape, color = Color(0xFFE8F0DD), modifier = Modifier.size(31.dp)) {
+                Box(contentAlignment = Alignment.Center) { Text(icon, color = accent, fontSize = 15.sp, fontWeight = FontWeight.Bold) }
+            }
+            Column(Modifier.padding(start = 8.dp)) {
+                Text(value, color = title, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
+                Text(label, color = Color(0xFF69746B), fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileQuickCard(icon: String, heading: String, description: String, modifier: Modifier, title: Color, muted: Color, accent: Color, onClick: () -> Unit) {
+    Surface(modifier.clickable { onClick() }, shape = RoundedCornerShape(19.dp), color = Color.White, shadowElevation = 2.dp) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Surface(shape = CircleShape, color = Color(0xFFE8F0DD), modifier = Modifier.size(34.dp)) {
+                Box(contentAlignment = Alignment.Center) { Text(icon, color = accent, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
+            }
+            Column(Modifier.weight(1f).padding(start = 9.dp)) {
+                Text(heading, color = title, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(description, color = muted, fontSize = 10.sp, lineHeight = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+            Text("›", color = accent, fontSize = 21.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun ProfileMenuCard(content: @Composable () -> Unit) {
+    Surface(shape = RoundedCornerShape(19.dp), color = Color.White, shadowElevation = 2.dp) {
+        Column(Modifier.padding(horizontal = 13.dp)) { content() }
+    }
+}
+
+@Composable
+private fun ProfileMenuRow(icon: String, heading: String, description: String, title: Color, muted: Color, accent: Color, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Surface(shape = CircleShape, color = Color(0xFFE8F0DD), modifier = Modifier.size(34.dp)) {
+            Box(contentAlignment = Alignment.Center) { Text(icon, color = accent, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
+        }
+        Column(Modifier.weight(1f).padding(start = 11.dp)) {
+            Text(heading, color = title, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text(description, color = muted, fontSize = 10.sp)
+        }
+        Text("›", color = accent, fontSize = 21.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -1171,3 +1273,4 @@ private fun storeInputColors() = OutlinedTextFieldDefaults.colors(
 )
 
 private fun Int.rupiah(): String = toString().reversed().chunked(3).joinToString(".").reversed()
+
