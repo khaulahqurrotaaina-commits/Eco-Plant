@@ -1,11 +1,13 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
 
-val ecoPlantLocalSettings = java.util.Properties().apply {
+val ecoPlantLocalSettings = Properties().apply {
     val settingsFile = rootProject.file("local.properties")
-    if (settingsFile.exists()) settingsFile.inputStream().use { load(it) }
+    if (settingsFile.exists()) settingsFile.inputStream().use { stream -> load(stream) }
 }
 fun quoteBuildConfig(value: String) = "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
