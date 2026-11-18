@@ -283,7 +283,7 @@ private fun PlantStoreApp() {
                 )
                 else -> ProfileScreen(
                     favoriteCount = favoriteIds.size,
-                    orderCount = if (lastOrder == null) 0 else 1,
+                    orderCount = orders.size,
                     onMenuSelect = { profileSection = it },
                     onLogout = { role = null; profileSection = null },
                 )
