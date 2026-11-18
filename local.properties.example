@@ -1,0 +1,5 @@
+# Copy this file to local.properties, then set your own local account values.
+ecoplant.admin.username=
+ecoplant.admin.password=
+ecoplant.officer.username=
+ecoplant.officer.password=
