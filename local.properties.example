@@ -1,4 +1,6 @@
-# Copy this file to local.properties, then set your own local account values.
+# Tambahkan nilai ini ke local.properties Android (jangan commit file local.properties).
+ecoplant.api.baseUrl=http://10.0.2.2:8080/api
+ecoplant.api.token=
 ecoplant.admin.username=
 ecoplant.admin.password=
 ecoplant.officer.username=

@@ -7,7 +7,7 @@ val ecoPlantLocalSettings = java.util.Properties().apply {
     val settingsFile = rootProject.file("local.properties")
     if (settingsFile.exists()) settingsFile.inputStream().use { load(it) }
 }
-fun asBuildConfigString(value: String) = "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+fun quoteBuildConfig(value: String) = "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 android {
     namespace = "com.khaulahqurrota.ecoplant"
@@ -24,10 +24,12 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        buildConfigField("String", "ADMIN_USERNAME", asBuildConfigString(ecoPlantLocalSettings.getProperty("ecoplant.admin.username", "")))
-        buildConfigField("String", "ADMIN_PASSWORD", asBuildConfigString(ecoPlantLocalSettings.getProperty("ecoplant.admin.password", "")))
-        buildConfigField("String", "OFFICER_USERNAME", asBuildConfigString(ecoPlantLocalSettings.getProperty("ecoplant.officer.username", "")))
-        buildConfigField("String", "OFFICER_PASSWORD", asBuildConfigString(ecoPlantLocalSettings.getProperty("ecoplant.officer.password", "")))
+        buildConfigField("String", "API_BASE_URL", quoteBuildConfig(ecoPlantLocalSettings.getProperty("ecoplant.api.baseUrl", "http://10.0.2.2:8080/api")))
+        buildConfigField("String", "API_TOKEN", quoteBuildConfig(ecoPlantLocalSettings.getProperty("ecoplant.api.token", "")))
+        buildConfigField("String", "ADMIN_USERNAME", quoteBuildConfig(ecoPlantLocalSettings.getProperty("ecoplant.admin.username", "")))
+        buildConfigField("String", "ADMIN_PASSWORD", quoteBuildConfig(ecoPlantLocalSettings.getProperty("ecoplant.admin.password", "")))
+        buildConfigField("String", "OFFICER_USERNAME", quoteBuildConfig(ecoPlantLocalSettings.getProperty("ecoplant.officer.username", "")))
+        buildConfigField("String", "OFFICER_PASSWORD", quoteBuildConfig(ecoPlantLocalSettings.getProperty("ecoplant.officer.password", "")))
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -67,3 +69,4 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
+

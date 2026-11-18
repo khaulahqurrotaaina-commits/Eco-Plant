@@ -45,10 +45,12 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,6 +67,9 @@ import com.khaulahqurrota.ecoplant.ui.theme.EcoPlantTheme
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 private val Forest = Color(0xFF174C38)
 private val Leaf = Color(0xFF2F7955)
@@ -138,6 +143,93 @@ private data class OrderSummary(
     val total: Int get() = plants.sumOf { it.price }
 }
 
+private fun Plant.toApiJson(): JSONObject = JSONObject()
+    .put("id", id).put("name", name).put("subtitle", subtitle).put("price", price)
+    .put("category", category).put("imageKey", imageKeyFor(photoRes)).put("rating", rating)
+    .put("scientificName", scientificName).put("description", description).put("gardenArea", gardenArea)
+    .put("careTips", careTips).put("healthStatus", healthStatus)
+
+private fun JSONObject.toPlant(): Plant = Plant(
+    id = optInt("id"),
+    name = optString("name", "Tanaman EcoPlant"),
+    subtitle = optString("subtitle", "Koleksi wisata tanaman"),
+    price = optInt("price"),
+    category = optString("category", "Indoor"),
+    photoRes = photoResFor(optString("imageKey", "plant_monstera")),
+    rating = optString("rating", "5.0"),
+    scientificName = optString("scientificName"),
+    description = optString("description"),
+    gardenArea = optString("gardenArea", "Area koleksi tanaman"),
+    careTips = optString("careTips", "Rawat sesuai kebutuhan tanaman."),
+    healthStatus = optString("healthStatus", "Sehat"),
+)
+
+private fun imageKeyFor(photoRes: Int): String = when (photoRes) {
+    R.drawable.plant_snake -> "plant_snake"
+    R.drawable.plant_peace_lily -> "plant_peace_lily"
+    R.drawable.plant_cactus -> "plant_cactus"
+    R.drawable.plant_rose -> "plant_rose"
+    R.drawable.plant_orchid -> "plant_orchid"
+    R.drawable.plant_kalanchoe -> "plant_kalanchoe"
+    R.drawable.plant_lavender -> "plant_lavender"
+    else -> "plant_monstera"
+}
+
+private fun photoResFor(imageKey: String): Int = when (imageKey) {
+    "plant_snake" -> R.drawable.plant_snake
+    "plant_peace_lily" -> R.drawable.plant_peace_lily
+    "plant_cactus" -> R.drawable.plant_cactus
+    "plant_rose" -> R.drawable.plant_rose
+    "plant_orchid" -> R.drawable.plant_orchid
+    "plant_kalanchoe" -> R.drawable.plant_kalanchoe
+    "plant_lavender" -> R.drawable.plant_lavender
+    else -> R.drawable.plant_monstera
+}
+
+private fun TourismInfo.toApiJson(): JSONObject = JSONObject()
+    .put("name", name).put("description", description).put("address", address)
+    .put("hours", hours).put("contact", contact)
+
+private fun JSONObject.toTourismInfo(): TourismInfo = TourismInfo(
+    name = optString("name", "Wisata Kebun Bandung"),
+    description = optString("description"),
+    address = optString("address"),
+    hours = optString("hours"),
+    contact = optString("contact"),
+)
+
+private fun PlantReport.toApiJson(): JSONObject = JSONObject()
+    .put("id", id).put("type", type).put("plantId", plantId ?: JSONObject.NULL)
+    .put("plantName", plantName).put("condition", condition).put("description", description)
+    .put("status", status).put("createdAt", createdAt)
+
+private fun JSONObject.toPlantReport(): PlantReport = PlantReport(
+    id = optInt("id"),
+    type = optString("type", "Laporan kondisi"),
+    plantId = if (isNull("plantId")) null else optInt("plantId"),
+    plantName = optString("plantName"),
+    condition = optString("condition", "Perlu perhatian"),
+    description = optString("description"),
+    status = optString("status", "Menunggu ditinjau"),
+    createdAt = optLong("createdAt", System.currentTimeMillis()),
+)
+
+private fun OrderSummary.toApiJson(): JSONObject = JSONObject()
+    .put("orderNumber", orderNumber).put("recipient", recipient).put("address", address)
+    .put("status", status).put("plants", JSONArray().also { array -> plants.forEach { array.put(it.toApiJson()) } })
+
+private fun JSONObject.toOrderSummary(): OrderSummary {
+    val plantArray = optJSONArray("plants") ?: JSONArray()
+    val orderPlants = (0 until plantArray.length()).mapNotNull { plantArray.optJSONObject(it)?.toPlant() }
+    return OrderSummary(
+        orderNumber = optInt("orderNumber"),
+        recipient = optString("recipient"),
+        address = optString("address"),
+        plants = orderPlants,
+        status = optString("status", "Menunggu diproses"),
+    )
+}
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -164,6 +256,35 @@ private fun PlantStoreApp() {
     val orders = remember { mutableStateListOf<OrderSummary>() }
     val reports = remember { mutableStateListOf<PlantReport>() }
     var tourismInfo by remember { mutableStateOf(TourismInfo()) }
+    val backendScope = rememberCoroutineScope()
+    var backendConnected by remember { mutableStateOf(false) }
+
+    LaunchedEffect(role) {
+        backendConnected = runCatching { EcoPlantApi.get("/health") }.isSuccess
+        if (backendConnected) {
+            coroutineScope {
+                val plantLoad = async { runCatching { EcoPlantApi.get("/plants").getJSONArray("data") } }
+                val reportLoad = async { runCatching { EcoPlantApi.get("/reports").getJSONArray("data") } }
+                val orderLoad = async { runCatching { EcoPlantApi.get("/orders").getJSONArray("data") } }
+                val tourismLoad = async { runCatching { EcoPlantApi.get("/tourism").getJSONObject("data") } }
+
+                plantLoad.await().getOrNull()?.let { array ->
+                    val remotePlants = (0 until array.length()).mapNotNull { array.optJSONObject(it)?.toPlant() }
+                    if (remotePlants.isNotEmpty()) { catalog.clear(); catalog.addAll(remotePlants) }
+                }
+                reportLoad.await().getOrNull()?.let { array ->
+                    reports.clear()
+                    for (index in array.length() - 1 downTo 0) array.optJSONObject(index)?.let { reports.add(it.toPlantReport()) }
+                }
+                orderLoad.await().getOrNull()?.let { array ->
+                    orders.clear()
+                    for (index in 0 until array.length()) array.optJSONObject(index)?.let { orders.add(it.toOrderSummary()) }
+                    lastOrder = orders.lastOrNull()
+                }
+                tourismLoad.await().getOrNull()?.let { tourismInfo = it.toTourismInfo() }
+            }
+        }
+    }
 
     if (role == null) {
         LoginScreen(
@@ -178,6 +299,7 @@ private fun PlantStoreApp() {
             EcoPlantBackdrop(Modifier.fillMaxSize())
             StaffConsole(
                 role = role!!,
+                backendConnected = backendConnected,
                 catalog = catalog,
                 orders = orders,
                 onLogout = { role = null },
@@ -185,28 +307,59 @@ private fun PlantStoreApp() {
                     if (plant.id == 0) {
                         val nextId = (catalog.maxOfOrNull { it.id } ?: 0) + 1
                         catalog.add(plant.copy(id = nextId))
+                        backendScope.launch {
+                            runCatching { EcoPlantApi.post("/plants", plant.toApiJson()) }
+                                .onSuccess { response ->
+                                    val savedPlant = response.optJSONObject("data")?.toPlant()
+                                    val index = catalog.indexOfFirst { it.id == nextId }
+                                    if (savedPlant != null && index >= 0) catalog[index] = savedPlant
+                                }
+                        }
                     } else {
                         val index = catalog.indexOfFirst { it.id == plant.id }
                         if (index >= 0) catalog[index] = plant
+                        backendScope.launch { runCatching { EcoPlantApi.put("/plants/${plant.id}", plant.toApiJson()) } }
                     }
                 },
-                onDeletePlant = { catalog.remove(it) },
+                onDeletePlant = { plant ->
+                    catalog.remove(plant)
+                    backendScope.launch { runCatching { EcoPlantApi.delete("/plants/${plant.id}") } }
+                },
                 onUpdateOrder = { orderNumber, status ->
                     val index = orders.indexOfFirst { it.orderNumber == orderNumber }
                     if (index >= 0) orders[index] = orders[index].copy(status = status)
+                    backendScope.launch { runCatching { EcoPlantApi.patch("/orders/$orderNumber", JSONObject().put("status", status)) } }
                 },
                 reports = reports,
-                onAddReport = { reports.add(0, it) },
+                onAddReport = { report ->
+                    reports.add(0, report)
+                    backendScope.launch {
+                        runCatching { EcoPlantApi.post("/reports", report.toApiJson()) }
+                            .onSuccess { response ->
+                                val savedReport = response.optJSONObject("data")?.toPlantReport()
+                                val index = reports.indexOfFirst { it.id == report.id }
+                                if (savedReport != null && index >= 0) reports[index] = savedReport
+                            }
+                    }
+                },
                 onUpdateReport = { id, status ->
                     val index = reports.indexOfFirst { it.id == id }
                     if (index >= 0) reports[index] = reports[index].copy(status = status)
+                    backendScope.launch { runCatching { EcoPlantApi.patch("/reports/$id", JSONObject().put("status", status)) } }
                 },
                 onUpdatePlantHealth = { plantId, status ->
                     val index = catalog.indexOfFirst { it.id == plantId }
-                    if (index >= 0) catalog[index] = catalog[index].copy(healthStatus = status)
+                    if (index >= 0) {
+                        val updatedPlant = catalog[index].copy(healthStatus = status)
+                        catalog[index] = updatedPlant
+                        backendScope.launch { runCatching { EcoPlantApi.put("/plants/$plantId", updatedPlant.toApiJson()) } }
+                    }
                 },
                 tourismInfo = tourismInfo,
-                onSaveTourismInfo = { tourismInfo = it },
+                onSaveTourismInfo = { info ->
+                    tourismInfo = info
+                    backendScope.launch { runCatching { EcoPlantApi.put("/tourism", info.toApiJson()) } }
+                },
             )
         }
         return
@@ -231,6 +384,17 @@ private fun PlantStoreApp() {
                         val newOrder = OrderSummary(orders.size + 1, recipient, address, cart.toList())
                         orders.add(newOrder)
                         lastOrder = newOrder
+                        backendScope.launch {
+                            runCatching { EcoPlantApi.post("/orders", newOrder.toApiJson()) }
+                                .onSuccess { response ->
+                                    val savedOrder = response.optJSONObject("data")?.toOrderSummary()
+                                    val index = orders.indexOfFirst { it.orderNumber == newOrder.orderNumber }
+                                    if (savedOrder != null && index >= 0) {
+                                        orders[index] = savedOrder
+                                        lastOrder = savedOrder
+                                    }
+                                }
+                        }
                         cart.clear()
                         checkout = false
                         orderDone = true
@@ -249,6 +413,7 @@ private fun PlantStoreApp() {
                 selectedGuidePlant != null -> PlantInfoDetail(plant = selectedGuidePlant!!, onBack = { selectedGuidePlant = null })
                 tab == StoreTab.Guide -> PlantGuideScreen(catalog = catalog, onPlantClick = { selectedGuidePlant = it })
                 tab == StoreTab.Home -> HomeScreen(
+                    backendConnected = backendConnected,
                     selectedCategory = selectedCategory,
                     catalog = catalog,
                     onCategoryChange = { selectedCategory = it },
@@ -295,6 +460,7 @@ private fun PlantStoreApp() {
 @Composable
 private fun StaffConsole(
     role: AppRole,
+    backendConnected: Boolean,
     catalog: List<Plant>,
     orders: List<OrderSummary>,
     onLogout: () -> Unit,
@@ -321,6 +487,11 @@ private fun StaffConsole(
             Column(Modifier.weight(1f)) {
                 Text("EcoPlant · Panel ${if (role == AppRole.Admin) "Admin" else "Petugas"}", color = Forest, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold)
                 Text("Halo, ${if (role == AppRole.Admin) "Admin" else "Petugas"} 🌱", color = Muted, fontSize = 12.sp)
+                Text(
+                    if (backendConnected) "Data tersambung ke backend" else "Backend belum tersambung · data contoh",
+                    color = if (backendConnected) Leaf else Muted,
+                    fontSize = 10.sp,
+                )
             }
             TextButton(onClick = onLogout) { Text("Keluar", color = Color(0xFF9A554A), fontWeight = FontWeight.Bold) }
         }
@@ -681,6 +852,7 @@ private fun ProductEditorDialog(plant: Plant?, onDismiss: () -> Unit, onSave: (P
 
 @Composable
 private fun HomeScreen(
+    backendConnected: Boolean,
     selectedCategory: String,
     catalog: List<Plant>,
     onCategoryChange: (String) -> Unit,
@@ -702,6 +874,11 @@ private fun HomeScreen(
                 Column(Modifier.weight(1f)) {
                     Text("EcoPlant", color = StoreText, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
                     Text("Tanam bahagia, hidup lebih hijau", color = StoreMuted, fontSize = 12.sp)
+                    Text(
+                        if (backendConnected) "Data wisata tersambung" else "Mode contoh · backend belum tersambung",
+                        color = if (backendConnected) Color(0xFFCBE5C8) else StoreMuted,
+                        fontSize = 9.sp,
+                    )
                 }
                 Surface(shape = CircleShape, color = StoreCard, modifier = Modifier.size(44.dp).clickable { onCart() }) {
                     Box(contentAlignment = Alignment.Center) { Text("🛒", fontSize = 19.sp) }
