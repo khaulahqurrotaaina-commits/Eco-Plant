@@ -1002,10 +1002,10 @@ private fun ProfileScreen(
     onMenuSelect: (ProfileSection) -> Unit,
     onLogout: () -> Unit,
 ) {
-    val page = Color(0xFFF5F7F1)
-    val title = Color(0xFF1D2B22)
-    val muted = Color(0xFF78847A)
-    val accent = Color(0xFF4F781F)
+    val page = Cream.copy(alpha = .82f)
+    val title = Ink
+    val muted = Muted
+    val accent = Forest
 
     Column(
         Modifier.fillMaxSize().background(page).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 18.dp),
@@ -1015,7 +1015,7 @@ private fun ProfileScreen(
 
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(25.dp))
-                .background(Brush.horizontalGradient(listOf(Color(0xFFA8C780), Color(0xFFD6E3B5))))
+                .background(Brush.horizontalGradient(listOf(Forest, Leaf)))
                 .padding(17.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1023,9 +1023,9 @@ private fun ProfileScreen(
                     Box(contentAlignment = Alignment.Center) { Text("🌿", fontSize = 31.sp) }
                 }
                 Column(Modifier.padding(start = 13.dp)) {
-                    Text("Halo, Sahabat EcoPlant 👋", color = title, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("Halo, Sahabat EcoPlant 👋", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(3.dp))
-                    Text("Selamat datang di Wisata Kebun Bandung", color = title.copy(alpha = .72f), fontSize = 11.sp, lineHeight = 15.sp)
+                    Text("Selamat datang di Wisata Kebun Bandung", color = Color.White.copy(alpha = .82f), fontSize = 11.sp, lineHeight = 15.sp)
                 }
             }
             Spacer(Modifier.height(15.dp))
@@ -1048,14 +1048,14 @@ private fun ProfileScreen(
         Text("Preferensi", color = title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         ProfileMenuCard {
             ProfileMenuRow("⌖", "Alamat pengiriman", "Kelola alamat pesanan", title, muted, accent) { onMenuSelect(ProfileSection.Address) }
-            HorizontalDivider(color = Color(0xFFE7EBE2))
+            HorizontalDivider(color = Mint)
             ProfileMenuRow("♧", "Notifikasi", "Atur pengingat tanaman", title, muted, accent) { onMenuSelect(ProfileSection.Settings) }
         }
 
         Text("Info & bantuan", color = title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         ProfileMenuCard {
             ProfileMenuRow("?", "Tips perawatan", "Panduan merawat tanaman", title, muted, accent) { onMenuSelect(ProfileSection.Care) }
-            HorizontalDivider(color = Color(0xFFE7EBE2))
+            HorizontalDivider(color = Mint)
             ProfileMenuRow("i", "Tentang wisata kebun", "Lokasi dan informasi EcoPlant", title, muted, accent) { onMenuSelect(ProfileSection.TourismInfo) }
         }
 
@@ -1078,12 +1078,12 @@ private fun ProfileScreen(
 private fun ProfileStat(icon: String, value: String, label: String, modifier: Modifier, title: Color, accent: Color) {
     Surface(modifier, shape = RoundedCornerShape(16.dp), color = Color.White.copy(alpha = .94f)) {
         Row(Modifier.padding(horizontal = 11.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(shape = CircleShape, color = Color(0xFFE8F0DD), modifier = Modifier.size(31.dp)) {
+            Surface(shape = CircleShape, color = Mint, modifier = Modifier.size(31.dp)) {
                 Box(contentAlignment = Alignment.Center) { Text(icon, color = accent, fontSize = 15.sp, fontWeight = FontWeight.Bold) }
             }
             Column(Modifier.padding(start = 8.dp)) {
                 Text(value, color = title, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
-                Text(label, color = Color(0xFF69746B), fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(label, color = Muted, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }
@@ -1093,7 +1093,7 @@ private fun ProfileStat(icon: String, value: String, label: String, modifier: Mo
 private fun ProfileQuickCard(icon: String, heading: String, description: String, modifier: Modifier, title: Color, muted: Color, accent: Color, onClick: () -> Unit) {
     Surface(modifier.clickable { onClick() }, shape = RoundedCornerShape(19.dp), color = Color.White, shadowElevation = 2.dp) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(shape = CircleShape, color = Color(0xFFE8F0DD), modifier = Modifier.size(34.dp)) {
+            Surface(shape = CircleShape, color = Mint, modifier = Modifier.size(34.dp)) {
                 Box(contentAlignment = Alignment.Center) { Text(icon, color = accent, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
             }
             Column(Modifier.weight(1f).padding(start = 9.dp)) {
@@ -1115,7 +1115,7 @@ private fun ProfileMenuCard(content: @Composable () -> Unit) {
 @Composable
 private fun ProfileMenuRow(icon: String, heading: String, description: String, title: Color, muted: Color, accent: Color, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-        Surface(shape = CircleShape, color = Color(0xFFE8F0DD), modifier = Modifier.size(34.dp)) {
+        Surface(shape = CircleShape, color = Mint, modifier = Modifier.size(34.dp)) {
             Box(contentAlignment = Alignment.Center) { Text(icon, color = accent, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
         }
         Column(Modifier.weight(1f).padding(start = 11.dp)) {
